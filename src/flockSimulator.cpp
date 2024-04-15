@@ -63,35 +63,35 @@ void load_cubemap(int frame_idx, GLuint handle, const std::vector<std::string>& 
   }
 }
 
-void FlockSimulator::load_textures() {
-  glGenTextures(1, &m_gl_texture_1);
-  glGenTextures(1, &m_gl_texture_2);
-  glGenTextures(1, &m_gl_texture_3);
-  glGenTextures(1, &m_gl_texture_4);
-  glGenTextures(1, &m_gl_cubemap_tex);
-  
-  m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
-  m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
-  m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
-  m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
-  
-  std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
-  std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
-  std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
-  std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
-  
-  std::vector<std::string> cubemap_fnames = {
-    m_project_root + "/textures/cube/posx.jpg",
-    m_project_root + "/textures/cube/negx.jpg",
-    m_project_root + "/textures/cube/posy.jpg",
-    m_project_root + "/textures/cube/negy.jpg",
-    m_project_root + "/textures/cube/posz.jpg",
-    m_project_root + "/textures/cube/negz.jpg"
-  };
-  
-  load_cubemap(5, m_gl_cubemap_tex, cubemap_fnames);
-  std::cout << "Loaded cubemap texture" << std::endl;
-}
+//void FlockSimulator::load_textures() {
+//  glGenTextures(1, &m_gl_texture_1);
+//  glGenTextures(1, &m_gl_texture_2);
+//  glGenTextures(1, &m_gl_texture_3);
+//  glGenTextures(1, &m_gl_texture_4);
+//  glGenTextures(1, &m_gl_cubemap_tex);
+//
+//  m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
+//  m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
+//  m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
+//  m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
+//
+//  std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
+//  std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
+//  std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
+//  std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
+//
+//  std::vector<std::string> cubemap_fnames = {
+//    m_project_root + "/textures/cube/posx.jpg",
+//    m_project_root + "/textures/cube/negx.jpg",
+//    m_project_root + "/textures/cube/posy.jpg",
+//    m_project_root + "/textures/cube/negy.jpg",
+//    m_project_root + "/textures/cube/posz.jpg",
+//    m_project_root + "/textures/cube/negz.jpg"
+//  };
+//
+//  load_cubemap(5, m_gl_cubemap_tex, cubemap_fnames);
+//  std::cout << "Loaded cubemap texture" << std::endl;
+//}
 
 void FlockSimulator::load_shaders() {
   std::set<std::string> shader_folder_contents;
@@ -159,7 +159,7 @@ FlockSimulator::FlockSimulator(std::string project_root, Screen *screen)
   this->screen = screen;
   
   this->load_shaders();
-  this->load_textures();
+//  this->load_textures();
 
   glEnable(GL_PROGRAM_POINT_SIZE);
   glEnable(GL_DEPTH_TEST);
@@ -212,11 +212,11 @@ void FlockSimulator::init() {
       avg_boid_position += boid.position / flock->boids.size();
   }
 
-  CGL::Vector3D target(avg_boid_position.x, avg_boid_position.y / 2,
-                       avg_boid_position.z);
+  CGL::Vector3D target(avg_boid_position[0], avg_boid_position[1] / 2,
+                       avg_boid_position[2]);
   CGL::Vector3D c_dir(0., 0., 0.);
 //  canonical_view_distance = max(cloth->width, cloth->height) * 0.9;
-      canonical_view_distance = max(1, 1) * 0.9;
+      canonical_view_distance = max(2, 2) * 0.9;
   scroll_rate = canonical_view_distance / 10;
 
   view_distance = canonical_view_distance * 2;
@@ -662,6 +662,94 @@ void FlockSimulator::initGUI(Screen *screen) {
       b->setFontSize(14);
       b->setChangeCallback(
           [this](bool state) { fp->enable_cohesion = state; });
+    }
+    
+    
+    // Behavior factors
+    new Label(window, "Parameters", "sans-bold");
+
+    {
+      Widget *panel = new Widget(window);
+      GridLayout *layout =
+          new GridLayout(Orientation::Horizontal, 2, Alignment::Middle, 5, 5);
+      layout->setColAlignment({Alignment::Maximum, Alignment::Fill});
+      layout->setSpacing(0, 10);
+      panel->setLayout(layout);
+
+        new Label(window, "separation", "sans-bold");
+
+        {
+          Widget *panel = new Widget(window);
+          panel->setLayout(
+              new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
+
+          Slider *slider = new Slider(panel);
+          slider->setValue(fp->separationFactor);
+          slider->setFixedWidth(105);
+
+          TextBox *percentage = new TextBox(panel);
+          percentage->setFixedWidth(75);
+          percentage->setValue(to_string(fp->separationFactor));
+          percentage->setUnits("%");
+          percentage->setFontSize(14);
+
+          slider->setCallback([percentage](float value) {
+            percentage->setValue(std::to_string(value));
+          });
+          slider->setFinalCallback([&](float value) {
+            fp->separationFactor = (double)value;
+          });
+        }
+        
+        new Label(window, "alignment", "sans-bold");
+
+        {
+          Widget *panel = new Widget(window);
+          panel->setLayout(
+              new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
+
+          Slider *slider = new Slider(panel);
+          slider->setValue(fp->alignmentFactor);
+          slider->setFixedWidth(105);
+
+          TextBox *percentage = new TextBox(panel);
+          percentage->setFixedWidth(75);
+          percentage->setValue(to_string(fp->alignmentFactor));
+          percentage->setUnits("%");
+          percentage->setFontSize(14);
+
+          slider->setCallback([percentage](float value) {
+            percentage->setValue(std::to_string(value));
+          });
+          slider->setFinalCallback([&](float value) {
+            fp->alignmentFactor = (double)value;
+          });
+        }
+        
+        new Label(window, "cohesion", "sans-bold");
+
+        {
+          Widget *panel = new Widget(window);
+          panel->setLayout(
+              new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
+
+          Slider *slider = new Slider(panel);
+          slider->setValue(fp->cohesionFactor);
+          slider->setFixedWidth(105);
+
+          TextBox *percentage = new TextBox(panel);
+          percentage->setFixedWidth(75);
+          percentage->setValue(to_string(fp->cohesionFactor));
+          percentage->setUnits("%");
+          percentage->setFontSize(14);
+
+          slider->setCallback([percentage](float value) {
+            percentage->setValue(std::to_string(value));
+          });
+          slider->setFinalCallback([&](float value) {
+            fp->cohesionFactor = (double)value;
+          });
+        }
     }
 
   // Simulation constants

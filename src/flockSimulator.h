@@ -42,7 +42,7 @@ private:
   void drawPhong(GLShader &shader);
   
   void load_shaders();
-  void load_textures();
+//  void load_textures();
   
   // File management
   
@@ -108,6 +108,7 @@ private:
   void mouseLeftDragged(double x, double y);
   void mouseRightDragged(double x, double y);
   void mouseMoved(double x, double y);
+    void mouseClicked(GLShader &shader);
 
   // Mouse flags
 
