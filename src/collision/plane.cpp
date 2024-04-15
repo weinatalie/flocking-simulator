@@ -1,8 +1,8 @@
 #include "iostream"
 #include <nanogui/nanogui.h>
 
-#include "../clothMesh.h"
-#include "../clothSimulator.h"
+//#include "../flockMesh.h"
+#include "../flockSimulator.h"
 #include "plane.h"
 
 using namespace std;
@@ -10,7 +10,7 @@ using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
 
-void Plane::collide(PointMass &pm) {
+void Plane::collide(Boid &boid) {
   // TODO (Part 3): Handle collisions with planes.
 
 }

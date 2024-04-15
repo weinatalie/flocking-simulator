@@ -1,13 +1,13 @@
 #include <nanogui/nanogui.h>
 
-#include "../clothMesh.h"
+//#include "../flockMesh.h"
 #include "../misc/sphere_drawing.h"
 #include "sphere.h"
 
 using namespace nanogui;
 using namespace CGL;
 
-void Sphere::collide(PointMass &pm) {
+void Sphere::collide(Boid &boid) {
   // TODO (Part 3): Handle collisions with spheres.
 
 }

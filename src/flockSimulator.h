@@ -1,11 +1,11 @@
-#ifndef CGL_CLOTH_SIMULATOR_H
-#define CGL_CLOTH_SIMULATOR_H
+#ifndef CGL_FLOCK_SIMULATOR_H
+#define CGL_FLOCK_SIMULATOR_H
 
 #include <nanogui/nanogui.h>
 #include <memory>
 
 #include "camera.h"
-#include "cloth.h"
+#include "flock.h"
 #include "collision/collisionObject.h"
 
 using namespace nanogui;
@@ -13,15 +13,15 @@ using namespace nanogui;
 struct UserShader;
 enum ShaderTypeHint { WIREFRAME = 0, NORMALS = 1, PHONG = 2 };
 
-class ClothSimulator {
+class FlockSimulator {
 public:
-  ClothSimulator(std::string project_root, Screen *screen);
-  ~ClothSimulator();
+    FlockSimulator(std::string project_root, Screen *screen);
+  ~FlockSimulator();
 
   void init();
 
-  void loadCloth(Cloth *cloth);
-  void loadClothParameters(ClothParameters *cp);
+  void loadFlock(Flock *flock);
+  void loadFlockParameters(FlockParameters *fp);
   void loadCollisionObjects(vector<CollisionObject *> *objects);
   virtual bool isAlive();
   virtual void drawContents();
@@ -62,8 +62,8 @@ private:
   CGL::Vector3D gravity = CGL::Vector3D(0, -9.8, 0);
   nanogui::Color color = nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f);
 
-  Cloth *cloth;
-  ClothParameters *cp;
+  Flock *flock;
+  FlockParameters *fp;
   vector<CollisionObject *> *collision_objects;
 
   // OpenGL attributes
@@ -149,4 +149,4 @@ struct UserShader {
   
 };
 
-#endif // CGL_CLOTH_SIM_H
+#endif // CGL_FLOCK_SIM_H

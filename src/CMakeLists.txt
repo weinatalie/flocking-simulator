@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
-# Cloth simulation source
-set(CLOTHSIM_VIEWER_SOURCE
-    # Cloth simulation objects
-    cloth.cpp
-    clothMesh.cpp
+# Flock simulation source
+set(FLOCKSIM_VIEWER_SOURCE
+    # Flock simulation objects
+    flock.cpp
 
     # Collision objects
     collision/sphere.cpp
@@ -12,10 +11,9 @@ set(CLOTHSIM_VIEWER_SOURCE
 
     # Application
     main.cpp
-    clothSimulator.cpp
+    flockSimulator.cpp
 
     # Miscellaneous
-    # png.cpp
     misc/sphere_drawing.cpp
     misc/file_utils.cpp
 
@@ -25,7 +23,7 @@ set(CLOTHSIM_VIEWER_SOURCE
 
 # Windows-only sources
 if(WIN32)
-list(APPEND CLOTHSIM_VIEWER_SOURCE
+list(APPEND FLOCKSIM_VIEWER_SOURCE
     # For get-opt
     misc/getopt.c
 )
@@ -66,7 +64,7 @@ link_directories(
 #-------------------------------------------------------------------------------
 # Add executable
 #-------------------------------------------------------------------------------
-add_executable(clothsim ${CLOTHSIM_VIEWER_SOURCE})
+add_executable(clothsim ${FLOCKSIM_VIEWER_SOURCE})
 
 target_link_libraries(clothsim
     CGL ${CGL_LIBRARIES}

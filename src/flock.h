@@ -1,0 +1,70 @@
+#ifndef FLOCK_H
+#define FLOCK_H
+
+#include <unordered_set>
+#include <unordered_map>
+#include <vector>
+
+#include "boid.h"
+#include "CGL/CGL.h"
+#include "CGL/misc.h"
+//#include "flockMesh.h"
+#include "collision/collisionObject.h"
+
+using namespace CGL;
+using namespace std;
+
+struct FlockParameters {
+    FlockParameters() {}
+    FlockParameters(double radius, double separationRadius, double boundaryFactor, double separationFactor, double alignmentFactor, double cohesionFactor, double maxSpeed, double minSpeed, double bias, bool enable_separation, bool enable_alignment, bool enable_cohesion)
+      : radius(radius), separationRadius(separationRadius), boundaryFactor(boundaryFactor), separationFactor(separationFactor), alignmentFactor(alignmentFactor), cohesionFactor(cohesionFactor), maxSpeed(maxSpeed), minSpeed(minSpeed), bias(bias), enable_separation(enable_separation), enable_alignment(enable_alignment), enable_cohesion(enable_cohesion) {}
+  ~FlockParameters() {}
+    
+    // Global simulation parameters
+
+    bool enable_separation;
+    bool enable_alignment;
+    bool enable_cohesion;
+
+    double radius = 0.8;
+    double separationRadius = 0.2;
+    double boundaryFactor = 0.1;
+    double separationFactor = 0.5;
+    double alignmentFactor = 0.5;
+    double cohesionFactor = 0.67;
+    double maxSpeed = 0.8;
+    double minSpeed = 0.4;
+    double bias = 0.05;
+};
+
+struct Flock {
+    Flock() {}
+    Flock(int num_boids);
+  ~Flock();
+
+  void buildGrid();
+
+  void simulate(double frames_per_sec, double simulation_steps, FlockParameters *cp,
+                vector<Vector3D> external_accelerations,
+                vector<CollisionObject *> *collision_objects);
+
+  void reset();
+  void buildFlockMesh();
+
+  void build_spatial_map();
+  void self_collide(Boid &boid, double simulation_steps);
+  float hash_position(Vector3D pos);
+    void update(Boid &boid);
+
+  // Flock properties
+    int num_boids = 50;
+
+  // Flock components
+    vector<Boid> boids;
+//    FlockMesh *flockMesh;
+
+  // Spatial hashing
+  unordered_map<float, vector<Boid *> *> map;
+};
+
+#endif /* FLOCK_H */
