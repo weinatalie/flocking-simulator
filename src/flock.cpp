@@ -22,7 +22,7 @@ Flock::~Flock() {
 void Flock::buildGrid() {
     // populates flock with boids
     
-    double numBigBirds = 0.05;
+    double numBigBirds = 0.02;
     for (int i = 0; i < num_boids; i++) {
         Vector3D position = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
         Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
@@ -119,7 +119,7 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
             }
         }
 
-        
+
         for (Boid &pred : boids) {
             if(boid.isPredator || !pred.isPredator)
                 continue;
@@ -152,6 +152,7 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
                 }
             }
         }
+
         if (boid.isPredator) {
             int close_ix = -1;
             double closest_dist = __DBL_MAX__; 
@@ -215,7 +216,14 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         // update boid position and velocity
         boid.velocity += boid.acceleration * delta_t;
         boid.position += boid.velocity * delta_t;
+
         
+        //boid.position[0] = min(boid.position[0], 1.0);
+        //boid.position[0] = max(boid.position[0], -1.0);
+        //boid.position[1] = min(boid.position[1], 1.0);
+        //boid.position[1] = max(boid.position[1], -1.0); 
+        //boid.position[2] = min(boid.position[2], 1.0);
+        //boid.position[2] = max(boid.position[2], -1.0);
     
         // adjust speed if out of bounds
         double speed = sqrt(boid.velocity[0] * boid.velocity[0] + boid.velocity[1] * boid.velocity[1] + boid.velocity[2] * boid.velocity[2]);

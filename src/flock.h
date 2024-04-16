@@ -27,7 +27,7 @@ struct FlockParameters {
     bool enable_cohesion = true;
 
     double radius = 2;
-    double separationRadius = 0.02;
+    double separationRadius = 0.1;
     double boundaryFactor = 0.4;
     double separationFactor = 0.05;
     double alignmentFactor = 0.005;
@@ -60,7 +60,7 @@ struct Flock {
     void update(Boid &boid);
 
   // Flock properties
-    int num_boids = 60;
+    int num_boids = 80;
 
   // Flock components
     vector<Boid> boids;
