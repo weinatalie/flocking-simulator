@@ -21,12 +21,11 @@ Flock::~Flock() {
 
 void Flock::buildGrid() {
     // populates flock with boids
-    for (int i = 0; i < num_boids; i++)
-    {
+    Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
+    for (int i = 0; i < num_boids; i++) {
         Vector3D position = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
-        Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
         Vector3D acceleration = Vector3D(0, 0, 0);
-        Boid boid = Boid(position, velocity, acceleration);
+        Boid boid = Boid(position, velocity, acceleration, false);
         boids.emplace_back(boid);
     }
 }
@@ -119,7 +118,7 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         
         // small random offset to account for stochastic effects
         Vector3D randomForce = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
-        boid.acceleration += randomForce/10;
+        boid.acceleration += randomForce/100;
         
         // add bias for left or right sides of screen
         for (Boid &boid : right) {
@@ -129,29 +128,29 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
             boid.acceleration += Vector3D((1 - bias) * boid.acceleration[0] - bias, 0, 0);
         }
         
+//         check boundaries
+        if (boid.position[2] > 1) {
+            boid.acceleration -= Vector3D(0, 0, boundaryFactor);
+        }
+        if (boid.position[2] < -1) {
+            boid.acceleration += Vector3D(0, 0, boundaryFactor);
+        }
+        if (boid.position[1] > 1) {
+            boid.acceleration -= Vector3D(0, boundaryFactor, 0);
+        }
+        if (boid.position[1] < -1) {
+            boid.acceleration += Vector3D(0, boundaryFactor, 0);
+        }
+        if (boid.position[0] > 1) {
+            boid.acceleration -= Vector3D(boundaryFactor, 0, 0);
+        }
+        if (boid.position[0] < -1) {
+            boid.acceleration += Vector3D(boundaryFactor, 0, 0);
+        }
+        
         // update boid position and velocity
         boid.position += boid.velocity * delta_t;
         boid.velocity += boid.acceleration * delta_t;
-        
-        // check boundaries
-        if (boid.position[2] >= 1) {
-            boid.velocity -= Vector3D(0, 0, boundaryFactor);
-        }
-        if (boid.position[2] <= -1) {
-            boid.velocity += Vector3D(0, 0, boundaryFactor);
-        }
-        if (boid.position[1] >= 1) {
-            boid.velocity -= Vector3D(0, boundaryFactor, 0);
-        }
-        if (boid.position[1] <= -1) {
-            boid.velocity += Vector3D(0, boundaryFactor, 0);
-        }
-        if (boid.position[0] >= 1) {
-            boid.velocity -= Vector3D(boundaryFactor, 0, 0);
-        }
-        if (boid.position[0] <= -1) {
-            boid.velocity += Vector3D(boundaryFactor, 0, 0);
-        }
     
         // adjust speed if out of bounds
         double speed = sqrt(boid.velocity[0] * boid.velocity[0] + boid.velocity[1] * boid.velocity[1] + boid.velocity[2] * boid.velocity[2]);

@@ -26,15 +26,15 @@ struct FlockParameters {
     bool enable_alignment;
     bool enable_cohesion;
 
-    double radius = 0.7;
-    double separationRadius = 0.2;
-    double boundaryFactor = 0.1;
-    double separationFactor = 0.5;
-    double alignmentFactor = 0.5;
-    double cohesionFactor = 0.67;
-    double maxSpeed = 1.2;
-    double minSpeed = 0.4;
-    double bias = 0.33;
+    double radius = 2;
+    double separationRadius = 0.02;
+    double boundaryFactor = 0.2;
+    double separationFactor = 0.05;
+    double alignmentFactor = 0.05;
+    double cohesionFactor = 0.005;
+    double maxSpeed = 1.6;
+    double minSpeed = 0.8;
+    double bias = 0.05;
 };
 
 struct Flock {
