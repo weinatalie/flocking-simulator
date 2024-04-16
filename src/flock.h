@@ -22,18 +22,21 @@ struct FlockParameters {
     
     // Global simulation parameters
 
-    bool enable_separation;
-    bool enable_alignment;
-    bool enable_cohesion;
+    bool enable_separation = true;
+    bool enable_alignment = true;
+    bool enable_cohesion = true;
 
     double radius = 2;
     double separationRadius = 0.02;
-    double boundaryFactor = 0.2;
+    double boundaryFactor = 0.4;
     double separationFactor = 0.05;
-    double alignmentFactor = 0.05;
-    double cohesionFactor = 0.005;
+    double alignmentFactor = 0.005;
+    double cohesionFactor = 0.05;
+    double predRange = 50;
+    double predTurnFactor = 0.15;
     double maxSpeed = 1.6;
     double minSpeed = 0.8;
+    double hungies = 0.2;
     double bias = 0.05;
 };
 
@@ -57,7 +60,7 @@ struct Flock {
     void update(Boid &boid);
 
   // Flock properties
-    int num_boids = 50;
+    int num_boids = 60;
 
   // Flock components
     vector<Boid> boids;

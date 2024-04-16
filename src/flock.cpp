@@ -21,11 +21,14 @@ Flock::~Flock() {
 
 void Flock::buildGrid() {
     // populates flock with boids
-    Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
+    
+    double numBigBirds = 0.05;
     for (int i = 0; i < num_boids; i++) {
         Vector3D position = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
+        Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
         Vector3D acceleration = Vector3D(0, 0, 0);
-        Boid boid = Boid(position, velocity, acceleration, false);
+        bool is_pred = rand() % 100 < numBigBirds * 100;
+        Boid boid = Boid(position, velocity, acceleration, is_pred);
         boids.emplace_back(boid);
     }
 }
@@ -39,19 +42,27 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     double separationFactor;
     double alignmentFactor;
     double cohesionFactor;
+    double predRange;
     double maxSpeed;
     double minSpeed;
     double bias;
+    double hungies; 
+    double predTurnFactor;
     bool cohesion;
     bool alignment;
     bool separation;
     
+
     radius = fp->radius;
     separationRadius = fp->separationRadius;
     boundaryFactor = fp->boundaryFactor;
     separationFactor = fp->separationFactor;
     alignmentFactor = fp->alignmentFactor;
     cohesionFactor = fp->cohesionFactor;
+    predRange = fp->predRange;
+    hungies = fp ->hungies;
+    predTurnFactor = fp->predTurnFactor;
+
     maxSpeed = fp->maxSpeed;
     minSpeed = fp->minSpeed;
     bias = fp->bias;
@@ -79,6 +90,7 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     }
     
     // iterate through all boids
+    
     for (Boid &boid : boids) {
         int neighbors = 0;
         Vector3D averagePosition = Vector3D(0, 0, 0);
@@ -87,7 +99,8 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         
         // iterate through all neighboring boids
         for (Boid &neighbor : boids) {
-            
+            if(boid.isPredator || neighbor.isPredator)
+                continue;
             float distance = sqrt((neighbor.position[0] - boid.position[0]) * (neighbor.position[0] - boid.position[0]) + (neighbor.position[1] - boid.position[1]) * (neighbor.position[1] - boid.position[1]) + (neighbor.position[2] - boid.position[2]) * (neighbor.position[2] - boid.position[2]));
             // check that we don't consider ourselves a neighbor
             if (distance > 0) {
@@ -101,21 +114,72 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
                 } else if (distance < radius) {
                     averagePosition += neighbor.position;
                     averageVelocity += neighbor.velocity;
-
                     neighbors++;
                 }
             }
         }
+
         
-        // account for cohesion, alignment, and separation
-        if (neighbors > 0) {
-            averagePosition = averagePosition/neighbors;
-            averageVelocity = averageVelocity/neighbors;
-            
-            boid.acceleration += (cohesionFactor * averagePosition - boid.position) + (alignmentFactor * averageVelocity - boid.velocity);
+        for (Boid &pred : boids) {
+            if(boid.isPredator || !pred.isPredator)
+                continue;
+            Vector3D diff = boid.position - pred.position;
+            Vector3D pred_dxyz = Vector3D();
+            int pred_count = 0;
+            float distance = diff.norm();
+            if (distance < predRange) {
+                pred_dxyz += diff;
+                pred_count++;
+            }
+            if (pred_count>0) {
+                if (pred_dxyz[2] > 0) {
+                    boid.acceleration += Vector3D(0, 0, predTurnFactor);
+                }
+                if (pred_dxyz[2] < 0) {
+                    boid.acceleration -= Vector3D(0, 0, predTurnFactor);
+                }
+                if (pred_dxyz[1] > 0) {
+                    boid.acceleration += Vector3D(0, predTurnFactor, 0);
+                }
+                if (pred_dxyz[1] < 0) {
+                    boid.acceleration -= Vector3D(0, predTurnFactor, 0);
+                }
+                if (pred_dxyz[0] > 0) {
+                    boid.acceleration += Vector3D(predTurnFactor, 0, 0);
+                }
+                if (pred_dxyz[0] < 0) {
+                    boid.acceleration -= Vector3D(predTurnFactor, 0, 0);
+                }
+            }
         }
-        boid.acceleration += separationFactor * separationVelocity;
+        if (boid.isPredator) {
+            int close_ix = -1;
+            double closest_dist = __DBL_MAX__; 
+
+            for (int p = 0; p < boids.size(); p++) {
+                if(boids[p].isPredator)
+                    continue;
+                double dist = (boid.position-boids[p].position).norm();
+                if(dist < closest_dist) {
+                    closest_dist = dist;
+                    close_ix = p;
+                }
+            }
+            boid.acceleration += hungies * (boids[close_ix].position - boid.position);
+        }    
         
+       
+        if(!boid.isPredator){
+        // account for cohesion, alignment, and separation
+            if (neighbors > 0) {
+                averagePosition = averagePosition/neighbors;
+                averageVelocity = averageVelocity/neighbors;
+                
+                boid.acceleration += (cohesionFactor * averagePosition - boid.position) + (alignmentFactor * averageVelocity - boid.velocity);
+            }
+            boid.acceleration += separationFactor * separationVelocity;
+        }
+    
         // small random offset to account for stochastic effects
         Vector3D randomForce = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
         boid.acceleration += randomForce/100;
@@ -149,8 +213,9 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         }
         
         // update boid position and velocity
-        boid.position += boid.velocity * delta_t;
         boid.velocity += boid.acceleration * delta_t;
+        boid.position += boid.velocity * delta_t;
+        
     
         // adjust speed if out of bounds
         double speed = sqrt(boid.velocity[0] * boid.velocity[0] + boid.velocity[1] * boid.velocity[1] + boid.velocity[2] * boid.velocity[2]);

@@ -397,11 +397,20 @@ void FlockSimulator::drawNormals(GLShader &shader) {
     int num_lat = 10;
     int num_lon = 10;
     for (Boid boid : flock->boids) {
+      if(boid.isPredator) {
+        origin = boid.position;
+        radius = 0.08;
+        friction = 0.3;
+        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
+        sphere->render(shader);
+      }
+      else {
         origin = boid.position;
         radius = 0.025;
         friction = 0.3;
         Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
         sphere->render(shader);
+      }
     }
 }
 

@@ -16,7 +16,7 @@ struct Boid {
 
   // static values
   Vector3D start_position;
-    bool isPredator;
+  bool isPredator;
 
   // dynamic values
   Vector3D position;
