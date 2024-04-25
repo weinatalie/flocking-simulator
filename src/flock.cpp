@@ -194,36 +194,28 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         }
         
 //         check boundaries
-        if (boid.position[2] > 1) {
+        if (boid.position[2] > 0.1) {
             boid.acceleration -= Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[2] < -1) {
+        if (boid.position[2] < -0.1) {
             boid.acceleration += Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[1] > 1) {
+        if (boid.position[1] > 0.1) {
             boid.acceleration -= Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[1] < -1) {
+        if (boid.position[1] < -0.1) {
             boid.acceleration += Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[0] > 1) {
+        if (boid.position[0] > 0.1) {
             boid.acceleration -= Vector3D(boundaryFactor, 0, 0);
         }
-        if (boid.position[0] < -1) {
+        if (boid.position[0] < 0.1) {
             boid.acceleration += Vector3D(boundaryFactor, 0, 0);
         }
         
         // update boid position and velocity
         boid.velocity += boid.acceleration * delta_t;
         boid.position += boid.velocity * delta_t;
-
-        
-        //boid.position[0] = min(boid.position[0], 1.0);
-        //boid.position[0] = max(boid.position[0], -1.0);
-        //boid.position[1] = min(boid.position[1], 1.0);
-        //boid.position[1] = max(boid.position[1], -1.0); 
-        //boid.position[2] = min(boid.position[2], 1.0);
-        //boid.position[2] = max(boid.position[2], -1.0);
     
         // adjust speed if out of bounds
         double speed = sqrt(boid.velocity[0] * boid.velocity[0] + boid.velocity[1] * boid.velocity[1] + boid.velocity[2] * boid.velocity[2]);

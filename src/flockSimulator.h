@@ -42,7 +42,7 @@ private:
   void drawPhong(GLShader &shader);
   
   void load_shaders();
-//  void load_textures();
+  void load_textures();
   
   // File management
   
@@ -53,6 +53,7 @@ private:
   virtual void resetCamera();
   virtual Matrix4f getProjectionMatrix();
   virtual Matrix4f getViewMatrix();
+  virtual Matrix4f getSkyboxViewMatrix();
 
   // Default simulation values
 
@@ -69,9 +70,11 @@ private:
   // OpenGL attributes
 
   int active_shader_idx = 0;
+  int active_skybox_idx = 1;
 
   vector<UserShader> shaders;
   vector<std::string> shaders_combobox_names;
+  vector<std::string> skybox_combobox_names = {"Cloudy", "Day", "Sunset"};
   
   // OpenGL textures
   
@@ -83,7 +86,9 @@ private:
   GLuint m_gl_texture_2;
   GLuint m_gl_texture_3;
   GLuint m_gl_texture_4;
-  GLuint m_gl_cubemap_tex;
+  GLuint m_gl_cubemap_tex_1;
+  GLuint m_gl_cubemap_tex_2;
+  GLuint m_gl_cubemap_tex_3;
   
   // OpenGL customizable inputs
   
@@ -94,6 +99,7 @@ private:
 
   CGL::Camera camera;
   CGL::Camera canonicalCamera;
+  CGL::Camera skyboxCamera;
 
   double view_distance;
   double canonical_view_distance;
@@ -108,7 +114,7 @@ private:
   void mouseLeftDragged(double x, double y);
   void mouseRightDragged(double x, double y);
   void mouseMoved(double x, double y);
-    void mouseClicked(GLShader &shader);
+  void mouseClicked(GLShader &shader);
 
   // Mouse flags
 

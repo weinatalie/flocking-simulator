@@ -53,7 +53,7 @@ void load_cubemap(int frame_idx, GLuint handle, const std::vector<std::string>& 
     unsigned char* img_data = stbi_load(file_locs[side_idx].c_str(), &img_x, &img_y, &img_n, 3);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + side_idx, 0, GL_RGB, img_x, img_y, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data);
     stbi_image_free(img_data);
-    std::cout << "Side " << side_idx << " has dimensions " << img_x << ", " << img_y << std::endl;
+    // std::cout << "Side " << side_idx << " has dimensions " << img_x << ", " << img_y << std::endl;
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -63,35 +63,38 @@ void load_cubemap(int frame_idx, GLuint handle, const std::vector<std::string>& 
   }
 }
 
-//void FlockSimulator::load_textures() {
-//  glGenTextures(1, &m_gl_texture_1);
-//  glGenTextures(1, &m_gl_texture_2);
-//  glGenTextures(1, &m_gl_texture_3);
-//  glGenTextures(1, &m_gl_texture_4);
-//  glGenTextures(1, &m_gl_cubemap_tex);
-//
-//  m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
-//  m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
-//  m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
-//  m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
-//
-//  std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
-//  std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
-//  std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
-//  std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
-//
-//  std::vector<std::string> cubemap_fnames = {
-//    m_project_root + "/textures/cube/posx.jpg",
-//    m_project_root + "/textures/cube/negx.jpg",
-//    m_project_root + "/textures/cube/posy.jpg",
-//    m_project_root + "/textures/cube/negy.jpg",
-//    m_project_root + "/textures/cube/posz.jpg",
-//    m_project_root + "/textures/cube/negz.jpg"
-//  };
-//
-//  load_cubemap(5, m_gl_cubemap_tex, cubemap_fnames);
-//  std::cout << "Loaded cubemap texture" << std::endl;
-//}
+void FlockSimulator::load_textures() {
+ glGenTextures(1, &m_gl_texture_1);
+ glGenTextures(1, &m_gl_texture_2);
+ glGenTextures(1, &m_gl_texture_3);
+ glGenTextures(1, &m_gl_texture_4);
+ glGenTextures(1, &m_gl_cubemap_tex_1);
+ glGenTextures(1, &m_gl_cubemap_tex_2);
+ glGenTextures(1, &m_gl_cubemap_tex_3);
+
+ m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
+ m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
+ m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
+ m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
+
+ std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
+ std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
+ std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
+ std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
+
+ std::vector<std::string> cubemap_fnames_1 = {
+  m_project_root + "/textures/skyboxDay/px.png",
+  m_project_root + "/textures/skyboxDay/nx.png",
+  m_project_root + "/textures/skyboxDay/py.png",
+  m_project_root + "/textures/skyboxDay/ny.png",
+  m_project_root + "/textures/skyboxDay/pz.png",
+  m_project_root + "/textures/skyboxDay/nz.png"
+ };
+
+ load_cubemap(5, m_gl_cubemap_tex_1, cubemap_fnames_1);
+  
+ std::cout << "Loaded cubemap texture" << std::endl;
+}
 
 void FlockSimulator::load_shaders() {
   std::set<std::string> shader_folder_contents;
@@ -145,9 +148,9 @@ void FlockSimulator::load_shaders() {
     shaders_combobox_names.push_back(shader_name);
   }
   
-  // Assuming that it's there, use "Normal" by default
+  // Assuming that it's there, use "Phong" by default
   for (size_t i = 0; i < shaders_combobox_names.size(); ++i) {
-    if (shaders_combobox_names[i] == "Normal") {
+    if (shaders_combobox_names[i] == "Phong") {
       active_shader_idx = i;
       break;
     }
@@ -159,7 +162,7 @@ FlockSimulator::FlockSimulator(std::string project_root, Screen *screen)
   this->screen = screen;
   
   this->load_shaders();
-//  this->load_textures();
+  this->load_textures();
 
   glEnable(GL_PROGRAM_POINT_SIZE);
   glEnable(GL_DEPTH_TEST);
@@ -173,7 +176,9 @@ FlockSimulator::~FlockSimulator() {
   glDeleteTextures(1, &m_gl_texture_2);
   glDeleteTextures(1, &m_gl_texture_3);
   glDeleteTextures(1, &m_gl_texture_4);
-  glDeleteTextures(1, &m_gl_cubemap_tex);
+  glDeleteTextures(1, &m_gl_cubemap_tex_1);
+  glDeleteTextures(1, &m_gl_cubemap_tex_2);
+  glDeleteTextures(1, &m_gl_cubemap_tex_3);
 
   if (flock) delete flock;
   if (fp) delete fp;
@@ -216,7 +221,7 @@ void FlockSimulator::init() {
                        avg_boid_position[2]);
   CGL::Vector3D c_dir(0., 0., 0.);
 //  canonical_view_distance = max(cloth->width, cloth->height) * 0.9;
-      canonical_view_distance = max(2, 2) * 0.9;
+      canonical_view_distance = max(1, 1) * 0.9;
   scroll_rate = canonical_view_distance / 10;
 
   view_distance = canonical_view_distance * 2;
@@ -235,6 +240,11 @@ void FlockSimulator::init() {
 
   camera.configure(camera_info, screen_w, screen_h);
   canonicalCamera.configure(camera_info, screen_w, screen_h);
+
+  skyboxCamera.place(target, acos(c_dir.y), atan2(c_dir.x, c_dir.z), 0.5,
+                     min_view_distance, max_view_distance);
+  skyboxCamera.configure(camera_info, screen_w, screen_h);
+  
 }
 
 bool FlockSimulator::isAlive() { return is_alive; }
@@ -264,24 +274,16 @@ void FlockSimulator::drawContents() {
 
   Matrix4f view = getViewMatrix();
   Matrix4f projection = getProjectionMatrix();
-
   Matrix4f viewProjection = projection * view;
 
-  shader.setUniform("u_model", model);
-  shader.setUniform("u_view_projection", viewProjection);
+  Matrix4f skyboxView = getSkyboxViewMatrix();
+  Matrix4f skyboxViewProjection = projection * skyboxView;
 
-  switch (active_shader.type_hint) {
-  case WIREFRAME:
-    shader.setUniform("u_color", color, false);
-    drawWireframe(shader);
-    break;
-  case NORMALS:
-    drawNormals(shader);
-    break;
-  case PHONG:
+  shader.setUniform("u_model", model);
+  shader.setUniform("u_view_projection", skyboxViewProjection);
   
     // Others
-    Vector3D cam_pos = camera.position();
+    Vector3D cam_pos = skyboxCamera.position();
     shader.setUniform("u_color", color, false);
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
     shader.setUniform("u_light_pos", Vector3f(0.5, 2, 2), false);
@@ -300,14 +302,28 @@ void FlockSimulator::drawContents() {
     shader.setUniform("u_height_scaling", m_height_scaling, false);
     
     shader.setUniform("u_texture_cubemap", 5, false);
-    drawPhong(shader);
-    break;
-  }
 
-  for (CollisionObject *co : *collision_objects) {
+    // Render skybox
+    shader.setUniform("skybox", true, false);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDrawArrays(GL_TRIANGLES, 0, 1152);
+
+    shader.setUniform("skybox", false, false);
+    glDepthMask(GL_TRUE);
+    shader.setUniform("u_view_projection", viewProjection);
+    glEnable(GL_DEPTH_TEST);
+
+    cam_pos = camera.position();
+    shader.setUniform("u_color", color, false);
+    shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+
+    for (CollisionObject *co : *collision_objects) {
     co->render(shader);
+    }
+
+    drawPhong(shader);
   }
-}
 
 void FlockSimulator::drawWireframe(GLShader &shader) {
 //  int num_structural_springs =
@@ -457,6 +473,27 @@ void FlockSimulator::drawPhong(GLShader &shader) {
 //  shader.uploadAttrib("in_tangent", tangents, false);
 //
 //  shader.drawArray(GL_TRIANGLES, 0, num_tris * 3);
+    Vector3D origin;
+    double radius;
+    double friction;
+    int num_lat = 10;
+    int num_lon = 10;
+    for (Boid boid : flock->boids) {
+      if(boid.isPredator) {
+        origin = boid.position;
+        radius = 0.03;
+        friction = 0.3;
+        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
+        sphere->render(shader);
+      }
+      else {
+        origin = boid.position;
+        radius = 0.01;
+        friction = 0.3;
+        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
+        sphere->render(shader);
+      }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -466,7 +503,10 @@ void FlockSimulator::drawPhong(GLShader &shader) {
 // functions that have to be recreated here.
 // ----------------------------------------------------------------------------
 
-void FlockSimulator::resetCamera() { camera.copy_placement(canonicalCamera); }
+void FlockSimulator::resetCamera() {
+  camera.copy_placement(canonicalCamera);
+  skyboxCamera.copy_placement(canonicalCamera);
+  }
 
 Matrix4f FlockSimulator::getProjectionMatrix() {
   Matrix4f perspective;
@@ -512,6 +552,36 @@ Matrix4f FlockSimulator::getViewMatrix() {
 
   lookAt.topLeftCorner<3, 3>() = R.transpose();
   lookAt.topRightCorner<3, 1>() = -R.transpose() * eye;
+  lookAt(3, 3) = 1.0f;
+
+  return lookAt;
+}
+
+Matrix4f FlockSimulator::getSkyboxViewMatrix() {
+  Matrix4f lookAt;
+  Matrix3f R;
+
+  lookAt.setZero();
+
+  // Convert CGL vectors to Eigen vectors
+  // TODO: Find a better way to do this!
+
+  CGL::Vector3D c_pos = skyboxCamera.position();
+  CGL::Vector3D c_udir = skyboxCamera.up_dir();
+  CGL::Vector3D c_target = skyboxCamera.view_point();
+
+  Vector3f eye(c_pos.x, c_pos.y, c_pos.z);
+  Vector3f up(c_udir.x, c_udir.y, c_udir.z);
+  Vector3f target(c_target.x, c_target.y, c_target.z);
+
+  R.col(2) = (eye - target).normalized();
+  R.col(0) = up.cross(R.col(2)).normalized();
+  R.col(1) = R.col(2).cross(R.col(0));
+
+  lookAt.topLeftCorner<3, 3>() = R.transpose();
+  lookAt.topRightCorner<3, 1>() = -R.transpose() * eye;
+  lookAt.row(3).setZero();
+  lookAt.col(3).setZero();
   lookAt(3, 3) = 1.0f;
 
   return lookAt;
@@ -582,10 +652,12 @@ void FlockSimulator::mouseLeftDragged(double x, double y) {
   float dy = y - mouse_y;
 
   camera.rotate_by(-dy * (PI / screen_h), -dx * (PI / screen_w));
+  skyboxCamera.rotate_by(-dy * (PI / screen_h), -dx * (PI / screen_w));
 }
 
 void FlockSimulator::mouseRightDragged(double x, double y) {
   camera.move_by(mouse_x - x, y - mouse_y, canonical_view_distance);
+  skyboxCamera.move_by(mouse_x - x, y - mouse_y, canonical_view_distance);
 }
 
 bool FlockSimulator::keyCallbackEvent(int key, int scancode, int action,
@@ -802,10 +874,46 @@ void FlockSimulator::initGUI(Screen *screen) {
   // Appearance
 
   {
-    ComboBox *cb = new ComboBox(window, shaders_combobox_names);
+    ComboBox *cb = new ComboBox(window, skybox_combobox_names);
     cb->setFontSize(14);
     cb->setCallback(
-        [this, screen](int idx) { active_shader_idx = idx; });
-    cb->setSelectedIndex(active_shader_idx);
+        [this, screen](int idx) {
+          active_skybox_idx = idx;
+          std::vector<std::string> cubemap_fnames_1 = {
+          m_project_root + "/textures/skyboxDay/px.png",
+          m_project_root + "/textures/skyboxDay/nx.png",
+          m_project_root + "/textures/skyboxDay/py.png",
+          m_project_root + "/textures/skyboxDay/ny.png",
+          m_project_root + "/textures/skyboxDay/pz.png",
+          m_project_root + "/textures/skyboxDay/nz.png"
+        };
+
+          std::vector<std::string> cubemap_fnames_2 = {
+          m_project_root + "/textures/skyboxSunset/px.png",
+          m_project_root + "/textures/skyboxSunset/nx.png",
+          m_project_root + "/textures/skyboxSunset/py.png",
+          m_project_root + "/textures/skyboxSunset/ny.png",
+          m_project_root + "/textures/skyboxSunset/pz.png",
+          m_project_root + "/textures/skyboxSunset/nz.png"
+        };
+
+          std::vector<std::string> cubemap_fnames_3 = {
+          m_project_root + "/textures/skyboxCloudy/px.png",
+          m_project_root + "/textures/skyboxCloudy/nx.png",
+          m_project_root + "/textures/skyboxCloudy/py.png",
+          m_project_root + "/textures/skyboxCloudy/ny.png",
+          m_project_root + "/textures/skyboxCloudy/pz.png",
+          m_project_root + "/textures/skyboxCloudy/nz.png"
+          };
+
+          if (idx == 2) {
+            load_cubemap(5, m_gl_cubemap_tex_2, cubemap_fnames_2);
+          } else if (idx == 0) {
+            load_cubemap(5, m_gl_cubemap_tex_3, cubemap_fnames_3);
+          } else {
+            load_cubemap(5, m_gl_cubemap_tex_1, cubemap_fnames_1);
+          }
+    });
+    cb->setSelectedIndex(active_skybox_idx);
   }
 }
