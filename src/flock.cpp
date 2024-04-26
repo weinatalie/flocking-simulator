@@ -12,6 +12,7 @@ using namespace std;
 
 Flock::Flock(int num_boids) {
     this->num_boids = num_boids;
+    this->sim_step = 0;
     buildGrid();
 }
 
@@ -48,6 +49,7 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     double bias;
     double hungies; 
     double predTurnFactor;
+    double windPower;
     bool cohesion;
     bool alignment;
     bool separation;
@@ -62,6 +64,7 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     predRange = fp->predRange;
     hungies = fp ->hungies;
     predTurnFactor = fp->predTurnFactor;
+    windPower = fp->windPower;
 
     maxSpeed = fp->maxSpeed;
     minSpeed = fp->minSpeed;
@@ -90,12 +93,19 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     }
     
     // iterate through all boids
+    if(sim_step>10000) {
+        sim_step = 0;
+    }
+    sim_step++;
+    Vector3D wind = Vector3D(0.025 * cos(sim_step) + windPower,0,0); //windPower * cos(sim_step)
     
     for (Boid &boid : boids) {
         int neighbors = 0;
         Vector3D averagePosition = Vector3D(0, 0, 0);
         Vector3D averageVelocity = Vector3D(0, 0, 0);
         Vector3D separationVelocity = Vector3D(0, 0, 0);
+        
+
         
         // iterate through all neighboring boids
         for (Boid &neighbor : boids) {
@@ -194,25 +204,27 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         }
         
 //         check boundaries
-        if (boid.position[2] > 0.1) {
+        double boundary = 5;
+        if (boid.position[2] > boundary) {
             boid.acceleration -= Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[2] < -0.1) {
+        if (boid.position[2] < -boundary) {
             boid.acceleration += Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[1] > 0.1) {
+        if (boid.position[1] > boundary) {
             boid.acceleration -= Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[1] < -0.1) {
+        if (boid.position[1] < -boundary) {
             boid.acceleration += Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[0] > 0.1) {
+        if (boid.position[0] > boundary) {
             boid.acceleration -= Vector3D(boundaryFactor, 0, 0);
         }
-        if (boid.position[0] < 0.1) {
+        if (boid.position[0] < boundary) {
             boid.acceleration += Vector3D(boundaryFactor, 0, 0);
         }
-        
+        boid.acceleration += wind;
+        //std::cout << "acc" << boid.acceleration[0] <<boid.acceleration[1]<<boid.acceleration[2]<< std::endl;
         // update boid position and velocity
         boid.velocity += boid.acceleration * delta_t;
         boid.position += boid.velocity * delta_t;

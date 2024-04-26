@@ -36,8 +36,9 @@ struct FlockParameters {
     double predTurnFactor = 0.15;
     double maxSpeed = 1.6;
     double minSpeed = 0.8;
-    double hungies = 0.2;
+    double hungies = 0.25;
     double bias = 0.05;
+    double windPower = 0.10;
 };
 
 struct Flock {
@@ -57,10 +58,11 @@ struct Flock {
   void build_spatial_map();
   void self_collide(Boid &boid, double simulation_steps);
   float hash_position(Vector3D pos);
-    void update(Boid &boid);
+  void update(Boid &boid);
 
   // Flock properties
-    int num_boids = 80;
+  int num_boids = 80;
+  int sim_step = 0;
 
   // Flock components
     vector<Boid> boids;
