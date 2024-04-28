@@ -40,6 +40,7 @@ private:
   void drawWireframe(GLShader &shader);
   void drawNormals(GLShader &shader);
   void drawPhong(GLShader &shader);
+  void draw_boid(GLShader &shader, Vector3D position, Vector3D velocity, double size);
   
   void load_shaders();
   void load_textures();
@@ -66,6 +67,9 @@ private:
   Flock *flock;
   FlockParameters *fp;
   vector<CollisionObject *> *collision_objects;
+  vector<Vector3D> vertices;
+  vector<Vector2D> uvs;
+  vector<Vector3D> normals;
 
   // OpenGL attributes
 
@@ -82,10 +86,12 @@ private:
   Vector3D m_gl_texture_2_size;
   Vector3D m_gl_texture_3_size;
   Vector3D m_gl_texture_4_size;
+  Vector3D m_gl_texture_bird_size;
   GLuint m_gl_texture_1;
   GLuint m_gl_texture_2;
   GLuint m_gl_texture_3;
   GLuint m_gl_texture_4;
+  GLuint m_gl_texture_bird;
   GLuint m_gl_cubemap_tex_1;
   GLuint m_gl_cubemap_tex_2;
   GLuint m_gl_cubemap_tex_3;

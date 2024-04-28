@@ -1,6 +1,7 @@
 #include <cmath>
 #include <glad/glad.h>
 
+#include <CGL/vector2D.h>
 #include <CGL/vector3D.h>
 #include <nanogui/nanogui.h>
 
@@ -18,6 +19,91 @@
 
 using namespace nanogui;
 using namespace std;
+
+bool load_object(const char * path,
+    vector<Vector3D> &out_vertices,
+    vector<Vector2D> &out_uvs,
+    vector<Vector3D> &out_normals) {
+
+      vector<unsigned int> vertex_indices;
+      vector<unsigned int> uv_indices;
+      vector<unsigned int> normal_indices;
+      vector<Vector3D> temp_vertices;
+      vector<Vector2D> temp_uvs;
+      vector<Vector3D> temp_normals;
+
+      FILE * file = fopen(path, "r");
+        if(file == NULL) {
+            printf("Impossible to open the file !\n");
+            return false;
+        }
+      while(1) {
+        char lineHeader[128];
+        int res = fscanf(file, "%s", lineHeader);
+        if (res == EOF) {
+          break;
+        }
+
+        if (strcmp(lineHeader, "v") == 0) {
+          Vector3D vertex;
+          fscanf(file, "%lf %lf %lf\n", &vertex.x, &vertex.y, &vertex.z );
+          temp_vertices.push_back(vertex);
+
+        } else if (strcmp(lineHeader, "vt") == 0) {
+          Vector2D uv;
+          fscanf(file, "%lf %lf\n", &uv.x, &uv.y );
+          temp_uvs.push_back(uv);
+
+        } else if (strcmp(lineHeader, "vn") == 0) {
+          Vector3D normal;
+          fscanf(file, "%lf %lf %lf\n", &normal.x, &normal.y, &normal.z );
+          temp_normals.push_back(normal);
+
+        } else if (strcmp(lineHeader, "f") == 0) {
+          std::string vertex1;
+          std::string vertex2;
+          std::string vertex3;
+          unsigned int vertexIndex[3];
+          unsigned int uvIndex[3];
+          unsigned int normalIndex[3];
+          int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2] );
+          if (matches != 9){
+              printf("File can't be read by our simple parser, try exporting with other options\n");
+              return false;
+          }
+
+          vertex_indices.push_back(vertexIndex[0]);
+          vertex_indices.push_back(vertexIndex[1]);
+          vertex_indices.push_back(vertexIndex[2]);
+          uv_indices.push_back(uvIndex[0]);
+          uv_indices.push_back(uvIndex[1]);
+          uv_indices.push_back(uvIndex[2]);
+          normal_indices.push_back(normalIndex[0]);
+          normal_indices.push_back(normalIndex[1]);
+          normal_indices.push_back(normalIndex[2]);
+        }
+    }
+
+    for (unsigned int i = 0; i < vertex_indices.size(); i++) {
+      unsigned int vertexIndex = vertex_indices[i];
+      Vector3D vertex = temp_vertices[vertexIndex - 1];
+      out_vertices.push_back(vertex);
+    }
+
+    for (unsigned int i = 0; i < normal_indices.size(); i++) {
+      unsigned int normalIndex = normal_indices[i];
+      Vector3D normal = temp_normals[normalIndex - 1];
+      out_normals.push_back(normal);
+    }
+
+    for (unsigned int i = 0; i < uv_indices.size(); i++) {
+      unsigned int uvIndex = uv_indices[i];
+      Vector2D uv = temp_uvs[uvIndex - 1];
+      out_uvs.push_back(uv);
+    }
+
+    return true;
+}
 
 Vector3D load_texture(int frame_idx, GLuint handle, const char* where) {
   Vector3D size_retval;
@@ -68,19 +154,14 @@ void FlockSimulator::load_textures() {
  glGenTextures(1, &m_gl_texture_2);
  glGenTextures(1, &m_gl_texture_3);
  glGenTextures(1, &m_gl_texture_4);
+ glGenTextures(1, &m_gl_texture_bird);
  glGenTextures(1, &m_gl_cubemap_tex_1);
  glGenTextures(1, &m_gl_cubemap_tex_2);
  glGenTextures(1, &m_gl_cubemap_tex_3);
 
  m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
- m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
- m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
- m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
 
  std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
- std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
- std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
- std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
 
  std::vector<std::string> cubemap_fnames_1 = {
   m_project_root + "/textures/skyboxDay/px.png",
@@ -133,13 +214,13 @@ void FlockSimulator::load_shaders() {
     ShaderTypeHint hint;
     if (shader_name == "Wireframe") {
       hint = ShaderTypeHint::WIREFRAME;
-      std::cout << "Type: Wireframe" << std::endl;
+      // std::cout << "Type: Wireframe" << std::endl;
     } else if (shader_name == "Normal") {
       hint = ShaderTypeHint::NORMALS;
-      std::cout << "Type: Normal" << std::endl;
+      // std::cout << "Type: Normal" << std::endl;
     } else {
       hint = ShaderTypeHint::PHONG;
-      std::cout << "Type: Custom" << std::endl;
+      // std::cout << "Type: Custom" << std::endl;
     }
     
     UserShader user_shader(shader_name, nanogui_shader, hint);
@@ -164,6 +245,9 @@ FlockSimulator::FlockSimulator(std::string project_root, Screen *screen)
   this->load_shaders();
   this->load_textures();
 
+  // Load the model
+  bool res = load_object("../models/boid.obj", this->vertices, this->uvs, this->normals);
+
   glEnable(GL_PROGRAM_POINT_SIZE);
   glEnable(GL_DEPTH_TEST);
 }
@@ -173,9 +257,6 @@ FlockSimulator::~FlockSimulator() {
     shader.nanogui_shader->free();
   }
   glDeleteTextures(1, &m_gl_texture_1);
-  glDeleteTextures(1, &m_gl_texture_2);
-  glDeleteTextures(1, &m_gl_texture_3);
-  glDeleteTextures(1, &m_gl_texture_4);
   glDeleteTextures(1, &m_gl_cubemap_tex_1);
   glDeleteTextures(1, &m_gl_cubemap_tex_2);
   glDeleteTextures(1, &m_gl_cubemap_tex_3);
@@ -292,206 +373,105 @@ void FlockSimulator::drawContents() {
     shader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
     shader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
     shader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
+    shader.setUniform("u_texture_bird_size", Vector2f(m_gl_texture_bird_size.x, m_gl_texture_bird_size.y), false);
     // Textures
     shader.setUniform("u_texture_1", 1, false);
     shader.setUniform("u_texture_2", 2, false);
     shader.setUniform("u_texture_3", 3, false);
     shader.setUniform("u_texture_4", 4, false);
+    shader.setUniform("u_texture_bird", 5, false);
     
     shader.setUniform("u_normal_scaling", m_normal_scaling, false);
     shader.setUniform("u_height_scaling", m_height_scaling, false);
     
     shader.setUniform("u_texture_cubemap", 5, false);
 
-    // Render skybox
+    // Render the skybox
     shader.setUniform("skybox", true, false);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
-    glDrawArrays(GL_TRIANGLES, 0, 1152);
+
+    Sphere* skybox = new Sphere(Vector3D(0, 0, 0), 1, 0.3, 10, 10);
+    skybox->render(shader);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
 
     shader.setUniform("skybox", false, false);
-    glDepthMask(GL_TRUE);
     shader.setUniform("u_view_projection", viewProjection);
-    glEnable(GL_DEPTH_TEST);
 
     cam_pos = camera.position();
     shader.setUniform("u_color", color, false);
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+  
 
     for (CollisionObject *co : *collision_objects) {
     co->render(shader);
     }
-
+    
     drawPhong(shader);
   }
 
+void FlockSimulator::draw_boid(GLShader &shader, Vector3D position, Vector3D velocity, double size) {
+  MatrixXf positions(4, this->vertices.size());
+  MatrixXf normals(4, this->vertices.size());
+  MatrixXf uvs(2, this->vertices.size());
+  MatrixXf tangents(4, this->vertices.size());
+  Matrix3x3 rotation;
+
+  Vector3D xAxis = Vector3D(1.0, 0.0, 0.0);
+  Vector3D axisOfRotation = cross(xAxis, velocity);
+  axisOfRotation.normalize();
+
+  Vector3D forward = velocity;
+  forward.normalize();
+  Vector3D up(0.0, 1.0, 0.0);
+  Vector3D right = cross(forward, up);
+  right.normalize();
+  up = cross(right, forward);
+  up.normalize();
+
+  rotation(0, 0) = 1.0; rotation(0, 1) = 0.0; rotation(0, 2) = -forward.x;
+  rotation(1, 0) = 0.0; rotation(1, 1) = 1.0; rotation(1, 2) = -forward.y;
+  rotation(2, 0) = 0.0; rotation(2, 1) = 0.0; rotation(2, 2) = -forward.z;
+
+  for (int i = 0; i < this->vertices.size(); i++) {
+    Vector3D pos = position + rotation * this->vertices[i] * size;
+    Vector3D norm = rotation * this->normals[i] * size;
+    Vector2D uv = this->uvs[i];
+    uv.y = 1.0 - uv.y;
+    positions.col(i) << pos.x, pos.y, pos.z, 1.0;
+    normals.col(i) << norm.x, norm.y, norm.z, 0.0;
+    uvs.col(i) << uv.x, uv.y;
+    tangents.col(i) << 1.0, 0.0, 0.0, 1.0;
+  }
+  shader.uploadAttrib("in_position", positions, false);
+  shader.uploadAttrib("in_normal", normals, false);
+  shader.uploadAttrib("in_uv", uvs, false);
+  shader.uploadAttrib("in_tangent", tangents, false);
+
+  shader.drawArray(GL_TRIANGLES, 0, this->vertices.size());
+}
+
 void FlockSimulator::drawWireframe(GLShader &shader) {
-//  int num_structural_springs =
-//      2 * cloth->num_width_points * cloth->num_height_points -
-//      cloth->num_width_points - cloth->num_height_points;
-//  int num_shear_springs =
-//      2 * (cloth->num_width_points - 1) * (cloth->num_height_points - 1);
-//  int num_bending_springs = num_structural_springs - cloth->num_width_points -
-//                            cloth->num_height_points;
-//
-//  int num_springs = cp->enable_structural_constraints * num_structural_springs +
-//                    cp->enable_shearing_constraints * num_shear_springs +
-//                    cp->enable_bending_constraints * num_bending_springs;
-//
-//  MatrixXf positions(4, num_springs * 2);
-//  MatrixXf normals(4, num_springs * 2);
-//
-//  // Draw springs as lines
-//
-//  int si = 0;
-//
-//  for (int i = 0; i < cloth->springs.size(); i++) {
-//    Spring s = cloth->springs[i];
-//
-//    if ((s.spring_type == STRUCTURAL && !cp->enable_structural_constraints) ||
-//        (s.spring_type == SHEARING && !cp->enable_shearing_constraints) ||
-//        (s.spring_type == BENDING && !cp->enable_bending_constraints)) {
-//      continue;
-//    }
-//
-//    Vector3D pa = s.pm_a->position;
-//    Vector3D pb = s.pm_b->position;
-//
-//    Vector3D na = s.pm_a->normal();
-//    Vector3D nb = s.pm_b->normal();
-//
-//    positions.col(si) << pa.x, pa.y, pa.z, 1.0;
-//    positions.col(si + 1) << pb.x, pb.y, pb.z, 1.0;
-//
-//    normals.col(si) << na.x, na.y, na.z, 0.0;
-//    normals.col(si + 1) << nb.x, nb.y, nb.z, 0.0;
-//
-//    si += 2;
-//  }
-//
-//  //shader.setUniform("u_color", nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f), false);
-//  shader.uploadAttrib("in_position", positions, false);
-//  // Commented out: the wireframe shader does not have this attribute
-//  //shader.uploadAttrib("in_normal", normals);
-//
-//  shader.drawArray(GL_LINES, 0, num_springs * 2);
 }
 
 void FlockSimulator::drawNormals(GLShader &shader) {
-//  int num_tris = flock->flockMesh->triangles.size();
-//
-//  MatrixXf positions(4, num_tris * 3);
-//  MatrixXf normals(4, num_tris * 3);
-//
-//  for (int i = 0; i < num_tris; i++) {
-//    Triangle *tri = flock->flockMesh->triangles[i];
-//
-//    Vector3D p1 = tri->pm1->position;
-//    Vector3D p2 = tri->pm2->position;
-//    Vector3D p3 = tri->pm3->position;
-//
-//    Vector3D n1 = tri->pm1->normal();
-//    Vector3D n2 = tri->pm2->normal();
-//    Vector3D n3 = tri->pm3->normal();
-//
-//    positions.col(i * 3) << p1.x, p1.y, p1.z, 1.0;
-//    positions.col(i * 3 + 1) << p2.x, p2.y, p2.z, 1.0;
-//    positions.col(i * 3 + 2) << p3.x, p3.y, p3.z, 1.0;
-//
-//    normals.col(i * 3) << n1.x, n1.y, n1.z, 0.0;
-//    normals.col(i * 3 + 1) << n2.x, n2.y, n2.z, 0.0;
-//    normals.col(i * 3 + 2) << n3.x, n3.y, n3.z, 0.0;
-//  }
-//
-//  shader.uploadAttrib("in_position", positions, false);
-//  shader.uploadAttrib("in_normal", normals, false);
-//
-//  shader.drawArray(GL_TRIANGLES, 0, num_tris * 3);
-    Vector3D origin;
-    double radius;
-    double friction;
-    int num_lat = 10;
-    int num_lon = 10;
-    for (Boid boid : flock->boids) {
-      if(boid.isPredator) {
-        origin = boid.position;
-        radius = 0.03;
-        friction = 0.3;
-        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
-        sphere->render(shader);
-      }
-      else {
-        origin = boid.position;
-        radius = 0.01;
-        friction = 0.3;
-        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
-        sphere->render(shader);
-      }
-    }
 }
 
 void FlockSimulator::drawPhong(GLShader &shader) {
-//  int num_tris = cloth->clothMesh->triangles.size();
-//
-//  MatrixXf positions(4, num_tris * 3);
-//  MatrixXf normals(4, num_tris * 3);
-//  MatrixXf uvs(2, num_tris * 3);
-//  MatrixXf tangents(4, num_tris * 3);
-//
-//  for (int i = 0; i < num_tris; i++) {
-//    Triangle *tri = cloth->clothMesh->triangles[i];
-//
-//    Vector3D p1 = tri->pm1->position;
-//    Vector3D p2 = tri->pm2->position;
-//    Vector3D p3 = tri->pm3->position;
-//
-//    Vector3D n1 = tri->pm1->normal();
-//    Vector3D n2 = tri->pm2->normal();
-//    Vector3D n3 = tri->pm3->normal();
-//
-//    positions.col(i * 3    ) << p1.x, p1.y, p1.z, 1.0;
-//    positions.col(i * 3 + 1) << p2.x, p2.y, p2.z, 1.0;
-//    positions.col(i * 3 + 2) << p3.x, p3.y, p3.z, 1.0;
-//
-//    normals.col(i * 3    ) << n1.x, n1.y, n1.z, 0.0;
-//    normals.col(i * 3 + 1) << n2.x, n2.y, n2.z, 0.0;
-//    normals.col(i * 3 + 2) << n3.x, n3.y, n3.z, 0.0;
-//
-//    uvs.col(i * 3    ) << tri->uv1.x, tri->uv1.y;
-//    uvs.col(i * 3 + 1) << tri->uv2.x, tri->uv2.y;
-//    uvs.col(i * 3 + 2) << tri->uv3.x, tri->uv3.y;
-//
-//    tangents.col(i * 3    ) << 1.0, 0.0, 0.0, 1.0;
-//    tangents.col(i * 3 + 1) << 1.0, 0.0, 0.0, 1.0;
-//    tangents.col(i * 3 + 2) << 1.0, 0.0, 0.0, 1.0;
-//  }
-//
-//
-//  shader.uploadAttrib("in_position", positions, false);
-//  shader.uploadAttrib("in_normal", normals, false);
-//  shader.uploadAttrib("in_uv", uvs, false);
-//  shader.uploadAttrib("in_tangent", tangents, false);
-//
-//  shader.drawArray(GL_TRIANGLES, 0, num_tris * 3);
     Vector3D origin;
     double radius;
     double friction;
     int num_lat = 10;
     int num_lon = 10;
+
     for (Boid boid : flock->boids) {
       if(boid.isPredator) {
-        origin = boid.position;
-        radius = 0.03;
-        friction = 0.3;
-        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
-        sphere->render(shader);
+        draw_boid(shader, boid.position, boid.velocity, 0.04);
       }
       else {
-        origin = boid.position;
-        radius = 0.01;
-        friction = 0.3;
-        Sphere* sphere = new Sphere(origin, radius, friction, num_lat, num_lon);
-        sphere->render(shader);
+        draw_boid(shader, boid.position, boid.velocity, 0.02);
       }
     }
 }

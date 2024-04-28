@@ -6,6 +6,7 @@ uniform vec3 u_light_pos;
 uniform vec3 u_light_intensity;
 uniform bool skybox;
 uniform samplerCube u_texture_cubemap;
+uniform sampler2D u_texture_1;
 
 in vec4 v_position;
 in vec4 v_normal;
@@ -35,4 +36,5 @@ void main() {
     mediump vec3 w_o = normalize(v_position.xyz / v_position.w).xyz - u_cam_pos.xyz;
     out_color.xyz = texture(u_texture_cubemap, w_o).xyz;
   }
+
 }

@@ -4,12 +4,14 @@
 // execution. They are also read-only to enable parallelization.
 uniform mat4 u_model;
 uniform mat4 u_view_projection;
+uniform bool skybox;
 
 // In a vertex shader, the "in" variables are read-only per-vertex 
 // properties. An example of this was shown in the rasterizer project, 
 // where each vertex had an associated "color" or "uv" value which we 
 // would later interpolate using barycentric coordinates.
 in vec4 in_position;
+in vec4 skybox_position;
 in vec4 in_normal;
 in vec4 in_tangent;
 in vec2 in_uv;
@@ -33,12 +35,13 @@ void main() {
   // Here, we just apply the model's transformation to the various
   // per-vertex properties. That way, when the fragment shader reads
   // them, we already have the position in world-space.
+
   v_position = u_model * in_position;
   v_normal = normalize(u_model * in_normal);
   v_uv = in_uv;
   v_tangent = normalize(u_model * in_tangent);
+  gl_Position = u_view_projection * u_model * in_position;
   
   // The final screen-space location of this vertex which the
   // GPU's triangle rasterizer takes in.
-  gl_Position = u_view_projection * u_model * in_position;
 }

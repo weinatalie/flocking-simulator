@@ -46,7 +46,7 @@ struct Flock {
   ~Flock();
 
   void buildGrid();
-
+  bool fieldOfView(Vector3D behind, Vector3D difference, double angle);
   void simulate(double frames_per_sec, double simulation_steps, FlockParameters *cp,
                 vector<Vector3D> external_accelerations,
                 vector<CollisionObject *> *collision_objects);
