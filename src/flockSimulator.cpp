@@ -755,7 +755,8 @@ void FlockSimulator::initGUI(Screen *screen) {
           num_birds->setFontSize(14);
           num_birds->setValue(flock->num_boids);
           num_birds->setSpinnable(true);
-          num_birds->setMinValue(0);
+          num_birds->setMinValue(1);
+          num_birds->setMaxValue(200);
           num_birds->setCallback([this](int value) { fp->num_boids = value; });
         }
 

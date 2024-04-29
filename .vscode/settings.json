@@ -81,6 +81,7 @@
         "numeric": "cpp",
         "random": "cpp",
         "algorithm": "cpp",
-        "alignedvector3": "cpp"
+        "alignedvector3": "cpp",
+        "hash_map": "cpp"
     }
 }

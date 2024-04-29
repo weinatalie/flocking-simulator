@@ -84,11 +84,28 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         separationFactor = 0;
     }
 
+    if (fp->num_boids > boids.size()) {
+        for (int i = 0; i < fp->num_boids - boids.size(); i++) {
+            Vector3D position = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
+            Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
+            Vector3D acceleration = Vector3D(0, 0, 0);
+            bool is_pred = rand() % 100 < 0.0075 * 100;
+            Boid boid = Boid(position, velocity, acceleration, is_pred);
+            boids.emplace_back(boid);
+        }
+    }
+    else if (fp->num_boids < boids.size()) {
+        for (int i = 0; i < boids.size() - fp->num_boids; i++) {
+            boids.pop_back();
+        }
+    }
+
     if(sim_step > 10000) {
         sim_step = 0;
     }
     sim_step++;
     Vector3D wind = Vector3D(0.025 * cos(sim_step) + windPower,0,0);
+
     build_spatial_map();
     
     // iterate through all boids
