@@ -746,6 +746,19 @@ void FlockSimulator::initGUI(Screen *screen) {
       layout->setSpacing(0, 10);
       panel->setLayout(layout);
 
+        new Label(panel, "boids:", "sans-bold");
+
+        {
+          IntBox<int> *num_birds = new IntBox<int>(panel);
+          num_birds->setEditable(true);
+          num_birds->setFixedSize(Vector2i(100, 20));
+          num_birds->setFontSize(14);
+          num_birds->setValue(flock->num_boids);
+          num_birds->setSpinnable(true);
+          num_birds->setMinValue(0);
+          num_birds->setCallback([this](int value) { fp->num_boids = value; });
+        }
+
         new Label(window, "separation", "sans-bold");
 
         {

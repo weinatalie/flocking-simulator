@@ -36,8 +36,9 @@ struct FlockParameters {
     double predTurnFactor = 0.15;
     double maxSpeed = 1.6;
     double minSpeed = 0.8;
-    double hungies = 0.25;
-    double windPower = 0.10;
+    double hungies = 1.0;
+    double windPower = 0;
+    int num_boids = 200;
 };
 
 struct Flock {
@@ -60,7 +61,7 @@ struct Flock {
   void update(Boid &boid);
 
   // Flock properties
-    int num_boids = 80;
+    int num_boids = 200;
     int sim_step = 0;
 
   // Flock components

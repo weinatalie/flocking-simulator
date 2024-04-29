@@ -23,7 +23,7 @@ Flock::~Flock() {
 void Flock::buildGrid() {
     // populates flock with boids
     
-    double numBigBirds = 0.01;
+    double numBigBirds = 0.0075;
     for (int i = 0; i < num_boids; i++) {
         Vector3D position = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
         Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
@@ -88,10 +88,10 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         sim_step = 0;
     }
     sim_step++;
-    Vector3D wind = Vector3D(0.025 * cos(sim_step) + windPower,0,0); 
+    Vector3D wind = Vector3D(0.025 * cos(sim_step) + windPower,0,0);
+    build_spatial_map();
     
     // iterate through all boids
-    
     for (Boid &boid : boids) {
         int neighbors = 0;
         Vector3D averagePosition = Vector3D(0, 0, 0);
@@ -99,17 +99,16 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         Vector3D separationVelocity = Vector3D(0, 0, 0);
         
         // iterate through all neighboring boids
-        for (Boid &neighbor : boids) {
+        for (Boid *neighbor: *map[hash_position(boid.position)]) {
             Vector3D behind = boid.velocity;
             behind.normalize();
             behind = behind * -1;
 
-            if (boid.isPredator || neighbor.isPredator)
-                continue;
-            float distance = sqrt((neighbor.position[0] - boid.position[0]) * (neighbor.position[0] - boid.position[0]) + (neighbor.position[1] - boid.position[1]) * (neighbor.position[1] - boid.position[1]) + (neighbor.position[2] - boid.position[2]) * (neighbor.position[2] - boid.position[2]));
-            // check that we don't consider ourselves a neighbor
-            if (distance > 0) {
-                Vector3D difference = neighbor.position - boid.position;
+            if (neighbor != &boid) {
+                if (boid.isPredator)
+                    continue;
+                float distance = sqrt((neighbor->position[0] - boid.position[0]) * (neighbor->position[0] - boid.position[0]) + (neighbor->position[1] - boid.position[1]) * (neighbor->position[1] - boid.position[1]) + (neighbor->position[2] - boid.position[2]) * (neighbor->position[2] - boid.position[2]));
+                                Vector3D difference = neighbor->position - boid.position;
                 
                 // check whether neighboring boid is within separation distance
                 if (distance < separationRadius) {
@@ -120,47 +119,77 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
                 // check whether neighboring boid is within alignment/cohesion distance
                 } else if (distance < radius) {
                     if (!fieldOfView(behind, difference, 30)) {
-                        averagePosition += neighbor.position;
-                        averageVelocity += neighbor.velocity;
+                        averagePosition += neighbor->position;
+                        averageVelocity += neighbor->velocity;
                         neighbors++;
+                    }
+                }
+
+                if (neighbor->isPredator && distance < predRange) {
+                    Vector3D diff = boid.position - neighbor->position;
+                    Vector3D pred_dxyz = Vector3D();
+                    int pred_count = 0;
+                    float distance = diff.norm();
+                    if (distance < predRange) {
+                        pred_dxyz += diff;
+                        pred_count++;
+                    }
+                    if (pred_count>0) {
+                        if (pred_dxyz[2] > 0.1) {
+                            boid.acceleration += Vector3D(0, 0, predTurnFactor);
+                        }
+                        if (pred_dxyz[2] < -0.1) {
+                            boid.acceleration -= Vector3D(0, 0, predTurnFactor);
+                        }
+                        if (pred_dxyz[1] > 0.1) {
+                            boid.acceleration += Vector3D(0, predTurnFactor, 0);
+                        }
+                        if (pred_dxyz[1] < -0.1) {
+                            boid.acceleration -= Vector3D(0, predTurnFactor, 0);
+                        }
+                        if (pred_dxyz[0] > 0.1) {
+                            boid.acceleration += Vector3D(predTurnFactor, 0, 0);
+                        }
+                        if (pred_dxyz[0] < -0.1) {
+                            boid.acceleration -= Vector3D(predTurnFactor, 0, 0);
+                        }
                     }
                 }
             }
         }
 
-
-        for (Boid &pred : boids) {
-            if(boid.isPredator || !pred.isPredator)
-                continue;
-            Vector3D diff = boid.position - pred.position;
-            Vector3D pred_dxyz = Vector3D();
-            int pred_count = 0;
-            float distance = diff.norm();
-            if (distance < predRange) {
-                pred_dxyz += diff;
-                pred_count++;
-            }
-            if (pred_count>0) {
-                if (pred_dxyz[2] > 0.1) {
-                    boid.acceleration += Vector3D(0, 0, predTurnFactor);
-                }
-                if (pred_dxyz[2] < -0.1) {
-                    boid.acceleration -= Vector3D(0, 0, predTurnFactor);
-                }
-                if (pred_dxyz[1] > 0.1) {
-                    boid.acceleration += Vector3D(0, predTurnFactor, 0);
-                }
-                if (pred_dxyz[1] < -0.1) {
-                    boid.acceleration -= Vector3D(0, predTurnFactor, 0);
-                }
-                if (pred_dxyz[0] > 0.1) {
-                    boid.acceleration += Vector3D(predTurnFactor, 0, 0);
-                }
-                if (pred_dxyz[0] < -0.1) {
-                    boid.acceleration -= Vector3D(predTurnFactor, 0, 0);
-                }
-            }
-        }
+        // for (Boid &pred : boids) {
+        //     if(boid.isPredator || !pred.isPredator)
+        //         continue;
+        //     Vector3D diff = boid.position - pred.position;
+        //     Vector3D pred_dxyz = Vector3D();
+        //     int pred_count = 0;
+        //     float distance = diff.norm();
+        //     if (distance < predRange) {
+        //         pred_dxyz += diff;
+        //         pred_count++;
+        //     }
+        //     if (pred_count>0) {
+        //         if (pred_dxyz[2] > 0.1) {
+        //             boid.acceleration += Vector3D(0, 0, predTurnFactor);
+        //         }
+        //         if (pred_dxyz[2] < -0.1) {
+        //             boid.acceleration -= Vector3D(0, 0, predTurnFactor);
+        //         }
+        //         if (pred_dxyz[1] > 0.1) {
+        //             boid.acceleration += Vector3D(0, predTurnFactor, 0);
+        //         }
+        //         if (pred_dxyz[1] < -0.1) {
+        //             boid.acceleration -= Vector3D(0, predTurnFactor, 0);
+        //         }
+        //         if (pred_dxyz[0] > 0.1) {
+        //             boid.acceleration += Vector3D(predTurnFactor, 0, 0);
+        //         }
+        //         if (pred_dxyz[0] < -0.1) {
+        //             boid.acceleration -= Vector3D(predTurnFactor, 0, 0);
+        //         }
+        //     }
+        // }
 
         if (boid.isPredator) {
             int close_ix = -1;
@@ -177,7 +206,6 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
             }
             boid.acceleration += hungies * (boids[close_ix].position - boid.position);
         }    
-        
        
         if(!boid.isPredator){
         // account for cohesion, alignment, and separation
@@ -195,22 +223,22 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         boid.acceleration += randomForce/100;
         
 //         check boundaries
-        if (boid.position[2] > 5) {
+        if (boid.position[2] > 1) {
             boid.acceleration -= Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[2] < -5) {
+        if (boid.position[2] < -1) {
             boid.acceleration += Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[1] > 5) {
+        if (boid.position[1] > 1) {
             boid.acceleration -= Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[1] < -5) {
+        if (boid.position[1] < -1) {
             boid.acceleration += Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[0] > 5) {
+        if (boid.position[0] > 1) {
             boid.acceleration -= Vector3D(boundaryFactor, 0, 0);
         }
-        if (boid.position[0] < 5) {
+        if (boid.position[0] < 1) {
             boid.acceleration += Vector3D(boundaryFactor, 0, 0);
         }
         
@@ -248,8 +276,12 @@ void Flock::build_spatial_map() {
   }
   map.clear();
 
-  // TODO (Part 4): Build a spatial map out of all of the point masses.
-
+  for (Boid &boid: boids) {
+    if (map.find(hash_position(boid.position)) == map.end()) {
+        map[hash_position(boid.position)] = new vector<Boid*>();
+    }
+    map[hash_position(boid.position)]->emplace_back(&boid);
+  }
 }
 
 void Flock::self_collide(Boid &boid, double simulation_steps) {
@@ -258,9 +290,10 @@ void Flock::self_collide(Boid &boid, double simulation_steps) {
 }
 
 float Flock::hash_position(Vector3D pos) {
-  // TODO (Part 4): Hash a 3D position into a unique float identifier that represents membership in some 3D box volume.
-
-  return 0.f; 
+    float w = 3 * 1000 / 100;
+    float h = 3 * 1000 / 100;
+    float t = max(w,h);
+    return floor(pos[0]/w) + 10000 * floor(pos[1]/h) + 1000000000 * floor(pos[2]/t);
 }
 
 ///////////////////////////////////////////////////////
