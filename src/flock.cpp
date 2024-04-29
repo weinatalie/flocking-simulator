@@ -12,6 +12,7 @@ using namespace std;
 
 Flock::Flock(int num_boids) {
     this->num_boids = num_boids;
+    this->sim_step = 0;
     buildGrid();
 }
 
@@ -22,7 +23,7 @@ Flock::~Flock() {
 void Flock::buildGrid() {
     // populates flock with boids
     
-    double numBigBirds = 0.02;
+    double numBigBirds = 0.01;
     for (int i = 0; i < num_boids; i++) {
         Vector3D position = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
         Vector3D velocity = Vector3D((rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1, (rand() / double(RAND_MAX)) * 2 - 1);
@@ -51,9 +52,9 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     double predRange;
     double maxSpeed;
     double minSpeed;
-    double bias;
     double hungies; 
     double predTurnFactor;
+    double windPower;
     bool cohesion;
     bool alignment;
     bool separation;
@@ -67,10 +68,10 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     predRange = fp->predRange;
     hungies = fp ->hungies;
     predTurnFactor = fp->predTurnFactor;
+    windPower = fp-> windPower;
 
     maxSpeed = fp->maxSpeed;
     minSpeed = fp->minSpeed;
-    bias = fp->bias;
     double delta_t = 1.0f / frames_per_sec / simulation_steps;
     
     if (!fp->enable_cohesion) {
@@ -82,6 +83,12 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
     if (!fp->enable_separation) {
         separationFactor = 0;
     }
+
+    if(sim_step > 10000) {
+        sim_step = 0;
+    }
+    sim_step++;
+    Vector3D wind = Vector3D(0.025 * cos(sim_step) + windPower,0,0); 
     
     // iterate through all boids
     
@@ -188,25 +195,27 @@ void Flock::simulate(double frames_per_sec, double simulation_steps, FlockParame
         boid.acceleration += randomForce/100;
         
 //         check boundaries
-        if (boid.position[2] > 0.1) {
+        if (boid.position[2] > 5) {
             boid.acceleration -= Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[2] < -0.1) {
+        if (boid.position[2] < -5) {
             boid.acceleration += Vector3D(0, 0, boundaryFactor);
         }
-        if (boid.position[1] > 0.1) {
+        if (boid.position[1] > 5) {
             boid.acceleration -= Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[1] < -0.1) {
+        if (boid.position[1] < -5) {
             boid.acceleration += Vector3D(0, boundaryFactor, 0);
         }
-        if (boid.position[0] > 0.1) {
+        if (boid.position[0] > 5) {
             boid.acceleration -= Vector3D(boundaryFactor, 0, 0);
         }
-        if (boid.position[0] < 0.1) {
+        if (boid.position[0] < 5) {
             boid.acceleration += Vector3D(boundaryFactor, 0, 0);
         }
         
+        boid.acceleration += wind;
+
         // update boid position and velocity
         boid.velocity += boid.acceleration * delta_t;
         boid.position += boid.velocity * delta_t;

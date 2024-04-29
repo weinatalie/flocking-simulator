@@ -40,7 +40,7 @@ private:
   void drawWireframe(GLShader &shader);
   void drawNormals(GLShader &shader);
   void drawPhong(GLShader &shader);
-  void draw_boid(GLShader &shader, Vector3D position, Vector3D velocity, double size);
+  void draw_boid(GLShader &shader, Vector3D position, Vector3D velocity, double size, bool predator);
   
   void load_shaders();
   void load_textures();
@@ -70,6 +70,9 @@ private:
   vector<Vector3D> vertices;
   vector<Vector2D> uvs;
   vector<Vector3D> normals;
+  vector<Vector3D> predator_vertices;
+  vector<Vector2D> predator_uvs;
+  vector<Vector3D> predator_normals;
 
   // OpenGL attributes
 

@@ -16,8 +16,8 @@ using namespace std;
 
 struct FlockParameters {
     FlockParameters() {}
-    FlockParameters(double radius, double separationRadius, double boundaryFactor, double separationFactor, double alignmentFactor, double cohesionFactor, double maxSpeed, double minSpeed, double bias, bool enable_separation, bool enable_alignment, bool enable_cohesion)
-      : radius(radius), separationRadius(separationRadius), boundaryFactor(boundaryFactor), separationFactor(separationFactor), alignmentFactor(alignmentFactor), cohesionFactor(cohesionFactor), maxSpeed(maxSpeed), minSpeed(minSpeed), bias(bias), enable_separation(enable_separation), enable_alignment(enable_alignment), enable_cohesion(enable_cohesion) {}
+    FlockParameters(double radius, double separationRadius, double boundaryFactor, double separationFactor, double alignmentFactor, double cohesionFactor, double maxSpeed, double minSpeed, bool enable_separation, bool enable_alignment, bool enable_cohesion)
+      : radius(radius), separationRadius(separationRadius), boundaryFactor(boundaryFactor), separationFactor(separationFactor), alignmentFactor(alignmentFactor), cohesionFactor(cohesionFactor), maxSpeed(maxSpeed), minSpeed(minSpeed), enable_separation(enable_separation), enable_alignment(enable_alignment), enable_cohesion(enable_cohesion) {}
   ~FlockParameters() {}
     
     // Global simulation parameters
@@ -36,8 +36,8 @@ struct FlockParameters {
     double predTurnFactor = 0.15;
     double maxSpeed = 1.6;
     double minSpeed = 0.8;
-    double hungies = 0.2;
-    double bias = 0.05;
+    double hungies = 0.25;
+    double windPower = 0.10;
 };
 
 struct Flock {
@@ -57,10 +57,11 @@ struct Flock {
   void build_spatial_map();
   void self_collide(Boid &boid, double simulation_steps);
   float hash_position(Vector3D pos);
-    void update(Boid &boid);
+  void update(Boid &boid);
 
   // Flock properties
     int num_boids = 80;
+    int sim_step = 0;
 
   // Flock components
     vector<Boid> boids;

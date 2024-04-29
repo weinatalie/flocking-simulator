@@ -152,16 +152,13 @@ void load_cubemap(int frame_idx, GLuint handle, const std::vector<std::string>& 
 void FlockSimulator::load_textures() {
  glGenTextures(1, &m_gl_texture_1);
  glGenTextures(1, &m_gl_texture_2);
- glGenTextures(1, &m_gl_texture_3);
- glGenTextures(1, &m_gl_texture_4);
  glGenTextures(1, &m_gl_texture_bird);
  glGenTextures(1, &m_gl_cubemap_tex_1);
  glGenTextures(1, &m_gl_cubemap_tex_2);
  glGenTextures(1, &m_gl_cubemap_tex_3);
 
  m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
-
- std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
+ m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
 
  std::vector<std::string> cubemap_fnames_1 = {
   m_project_root + "/textures/skyboxDay/px.png",
@@ -245,8 +242,9 @@ FlockSimulator::FlockSimulator(std::string project_root, Screen *screen)
   this->load_shaders();
   this->load_textures();
 
-  // Load the model
-  bool res = load_object("../models/boid.obj", this->vertices, this->uvs, this->normals);
+  // Load the models
+  bool load_boid = load_object("../models/boid.obj", this->vertices, this->uvs, this->normals);
+  bool loid_predator = load_object("../models/predator.obj", this->predator_vertices, this->predator_uvs, this->predator_normals);
 
   glEnable(GL_PROGRAM_POINT_SIZE);
   glEnable(GL_DEPTH_TEST);
@@ -257,6 +255,7 @@ FlockSimulator::~FlockSimulator() {
     shader.nanogui_shader->free();
   }
   glDeleteTextures(1, &m_gl_texture_1);
+  glDeleteTextures(1, &m_gl_texture_2);
   glDeleteTextures(1, &m_gl_cubemap_tex_1);
   glDeleteTextures(1, &m_gl_cubemap_tex_2);
   glDeleteTextures(1, &m_gl_cubemap_tex_3);
@@ -412,7 +411,7 @@ void FlockSimulator::drawContents() {
     drawPhong(shader);
   }
 
-void FlockSimulator::draw_boid(GLShader &shader, Vector3D position, Vector3D velocity, double size) {
+void FlockSimulator::draw_boid(GLShader &shader, Vector3D position, Vector3D velocity, double size, bool predator) {
   MatrixXf positions(4, this->vertices.size());
   MatrixXf normals(4, this->vertices.size());
   MatrixXf uvs(2, this->vertices.size());
@@ -435,15 +434,30 @@ void FlockSimulator::draw_boid(GLShader &shader, Vector3D position, Vector3D vel
   rotation(1, 0) = 0.0; rotation(1, 1) = 1.0; rotation(1, 2) = -forward.y;
   rotation(2, 0) = 0.0; rotation(2, 1) = 0.0; rotation(2, 2) = -forward.z;
 
-  for (int i = 0; i < this->vertices.size(); i++) {
-    Vector3D pos = position + rotation * this->vertices[i] * size;
-    Vector3D norm = rotation * this->normals[i] * size;
-    Vector2D uv = this->uvs[i];
-    uv.y = 1.0 - uv.y;
-    positions.col(i) << pos.x, pos.y, pos.z, 1.0;
-    normals.col(i) << norm.x, norm.y, norm.z, 0.0;
-    uvs.col(i) << uv.x, uv.y;
-    tangents.col(i) << 1.0, 0.0, 0.0, 1.0;
+  if (predator) {
+    for (int i = 0; i < this->predator_vertices.size(); i++) {
+      Vector3D newPosition = position + rotation * this->predator_vertices[i] * size;
+      Vector3D newNormal = rotation * this->predator_normals[i] * size;
+      Vector2D newUv = this->predator_uvs[i];
+      newUv.y = 1.0 - newUv.y;
+      positions.col(i) << newPosition.x, newPosition.y, newPosition.z, 1.0;
+      normals.col(i) << newNormal.x, newNormal.y, newNormal.z, 0.0;
+      uvs.col(i) << newUv.x, newUv.y;
+      tangents.col(i) << 1.0, 0.0, 0.0, 1.0;
+    }
+    shader.setUniform("predator", true, false);
+  } else {
+    for (int i = 0; i < this->vertices.size(); i++) {
+      Vector3D newPosition = position + rotation * this->vertices[i] * size;
+      Vector3D newNormal = rotation * this->normals[i] * size;
+      Vector2D newUv = this->uvs[i];
+      newUv.y = 1.0 - newUv.y;
+      positions.col(i) << newPosition.x, newPosition.y, newPosition.z, 1.0;
+      normals.col(i) << newNormal.x, newNormal.y, newNormal.z, 0.0;
+      uvs.col(i) << newUv.x, newUv.y;
+      tangents.col(i) << 1.0, 0.0, 0.0, 1.0;
+    }
+    shader.setUniform("predator", false, false);
   }
   shader.uploadAttrib("in_position", positions, false);
   shader.uploadAttrib("in_normal", normals, false);
@@ -467,12 +481,7 @@ void FlockSimulator::drawPhong(GLShader &shader) {
     int num_lon = 10;
 
     for (Boid boid : flock->boids) {
-      if(boid.isPredator) {
-        draw_boid(shader, boid.position, boid.velocity, 0.04);
-      }
-      else {
-        draw_boid(shader, boid.position, boid.velocity, 0.02);
-      }
+      draw_boid(shader, boid.position, boid.velocity, 0.02, boid.isPredator);
     }
 }
 
@@ -811,6 +820,33 @@ void FlockSimulator::initGUI(Screen *screen) {
             fp->cohesionFactor = (double)value;
           });
         }
+
+new Label(window, "wind", "sans-bold");
+
+{
+    Widget *panel = new Widget(window);
+    panel->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
+
+    Slider *slider = new Slider(panel);
+    std::__1::pair<float, float> range = {-1, 1};
+    slider->setRange(range);
+    slider->setValue(fp->windPower);
+    slider->setFixedWidth(105);
+
+    TextBox *percentage = new TextBox(panel);
+    percentage->setFixedWidth(75);
+    percentage->setValue(std::to_string(fp->windPower));
+    percentage->setUnits("%");
+    percentage->setFontSize(14);
+
+    slider->setCallback([percentage](float value) {
+        percentage->setValue(std::to_string(value));
+    });
+
+    slider->setFinalCallback([&](float value) {
+        fp->windPower = (double)value;
+    });
+}
     }
 
   // Simulation constants
