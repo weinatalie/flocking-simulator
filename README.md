@@ -2,7 +2,7 @@
 
 <b>Flock Sim</b> is an interactive 3D simulation of Craig Reynold's Boids (bird-oids), written in C++ and rendered with OpenGL.
 
-gif
+![](/media/demo.gif)
 
 <h2>Features 📍</h2>
 
